@@ -4,9 +4,13 @@ from flask_cors import CORS
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
-from settings import Config, DevelopmentConfig, ProductionConfig
+from settings import Config, DevelopmentConfig, ProductionConfig, setup_log
 from project.apps.home import home_buleprint
 from project.apps.user import user_buleprint
+
+
+# 记录日志
+setup_log(DevelopmentConfig)
 
 
 def get_app(config=Config):
