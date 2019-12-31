@@ -5,6 +5,9 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from settings import Config
 
+from project.apps.home.views import home_buleprint
+
+
 app = Flask(__name__)
 
 app.config.from_object(Config)
@@ -17,3 +20,6 @@ redis_store = redis.Redis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
 Session(app)
 
 CORS(app)
+
+# 注册蓝图
+app.register_blueprint(home_buleprint)
