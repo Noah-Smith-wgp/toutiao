@@ -1,10 +1,10 @@
-from flask import Blueprint, session
+from flask import session
 
-home_buleprint = Blueprint('home', __name__)
+from project.apps.home import home_buleprint
 
 
 @home_buleprint.route('/')
 def index():
 
     session['id'] = 'abc'
-    return '--index--'
+    return '--index--!!!'
