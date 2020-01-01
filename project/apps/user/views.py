@@ -5,13 +5,13 @@ from flask_restful import Api, Resource, reqparse
 from project import db
 from project.apps.user import user_buleprint
 from project.models.user import User
-from project.utils.user import generate_token
+from project.utils.user import generate_token, check_user_token
 
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
 
-from flask import make_response, current_app
+from flask import make_response, current_app, request
 from flask_restful.utils import PY3
 from json import dumps
 
@@ -72,6 +72,8 @@ class LoginResource(Resource):
         mobile = args.get('mobile')
         code = args.get('code')
 
+        current_app.logger.info(code)
+
         try:
             user = User.query.filter_by(mobile=mobile).first()
         except Exception as e:
@@ -94,5 +96,35 @@ class LoginResource(Resource):
         return {'token': token}
 
 
+class CenterResource(Resource):
+
+    def get(self):
+
+        authorization = request.headers.get('authorization')
+        if authorization is not None and authorization.startswith('Bearer'):
+            token = authorization[7:]
+            user_id = check_user_token(token)
+
+            try:
+                user = User.query.get(user_id)
+            except Exception as e:
+                current_app.logger.error(e)
+            else:
+                if user:
+                    return {
+                        "id": user.id,
+                        "name": user.name,
+                        "photo": user.profile_photo,
+                        "intro": user.introduction,
+                        "art_count": user.article_count,
+                        "follow_count": user.following_count,
+                        "fans_count": user.fans_count
+                    }
+
+        else:
+            return {'message': '请登录'}
+
+
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
+user_api.add_resource(CenterResource, '/user')
