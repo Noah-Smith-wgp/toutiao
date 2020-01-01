@@ -1,9 +1,10 @@
 import redis
-from flask import Flask
+from flask import Flask, request, g
 from flask_cors import CORS
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
+from project.utils.user import check_user_token
 from settings import Config, DevelopmentConfig, ProductionConfig, setup_log
 
 
@@ -33,6 +34,19 @@ app = get_app(DevelopmentConfig)
 
 # 加载配置类之后在创建db
 db = SQLAlchemy(app)
+
+
+@app.before_request
+def before_request():
+
+    g.user_id = None
+    # 获取token
+    authorization = request.headers.get('authorization')
+    if authorization is not None and authorization.startswith('Bearer'):
+        token = authorization[7:]
+        # 验证token
+        user_id = check_user_token(token)
+        g.user_id = user_id
 
 
 # 注册蓝图

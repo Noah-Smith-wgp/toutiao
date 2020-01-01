@@ -5,13 +5,13 @@ from flask_restful import Api, Resource, reqparse
 from project import db
 from project.apps.user import user_buleprint
 from project.models.user import User
-from project.utils.user import generate_token, check_user_token
+from project.utils.user import generate_token, check_user_token, loginrequired
 
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
 
-from flask import make_response, current_app, request
+from flask import make_response, current_app, request, g
 from flask_restful.utils import PY3
 from json import dumps
 
@@ -98,31 +98,24 @@ class LoginResource(Resource):
 
 class CenterResource(Resource):
 
+    method_decorators = [loginrequired]
+
     def get(self):
 
-        authorization = request.headers.get('authorization')
-        if authorization is not None and authorization.startswith('Bearer'):
-            token = authorization[7:]
-            user_id = check_user_token(token)
-
-            try:
-                user = User.query.get(user_id)
-            except Exception as e:
-                current_app.logger.error(e)
-            else:
-                if user:
-                    return {
-                        "id": user.id,
-                        "name": user.name,
-                        "photo": user.profile_photo,
-                        "intro": user.introduction,
-                        "art_count": user.article_count,
-                        "follow_count": user.following_count,
-                        "fans_count": user.fans_count
-                    }
-
+        try:
+            user = User.query.get(g.user_id)
+        except Exception as e:
+            current_app.logger.error(e)
         else:
-            return {'message': '请登录'}
+            return {
+                "id": user.id,
+                "name": user.name,
+                "photo": user.profile_photo,
+                "intro": user.introduction,
+                "art_count": user.article_count,
+                "follow_count": user.following_count,
+                "fans_count": user.fans_count
+            }
 
 
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
