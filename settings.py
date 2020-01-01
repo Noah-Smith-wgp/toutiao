@@ -12,7 +12,8 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # 定义Redis配置
-    REDIS_HOST = '49.232.164.126'
+    # REDIS_HOST = '49.232.164.126'
+    REDIS_HOST = '127.0.0.1'
     REDIS_PORT = 6379
 
     # flask_session的配置信息
@@ -24,6 +25,8 @@ class Config(object):
 
     # 默认日志等级
     LOG_LEVEL = logging.DEBUG
+
+    JWT_EXPIRES_IN = 3600*24*7
 
 
 class DevelopmentConfig(Config):

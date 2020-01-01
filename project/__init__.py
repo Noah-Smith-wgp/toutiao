@@ -5,8 +5,6 @@ from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
 from settings import Config, DevelopmentConfig, ProductionConfig, setup_log
-from project.apps.home import home_buleprint
-from project.apps.user import user_buleprint
 
 
 # 记录日志
@@ -16,7 +14,7 @@ setup_log(DevelopmentConfig)
 def get_app(config=Config):
     app = Flask(__name__)
 
-    app.config.from_object(Config)
+    app.config.from_object(config)
 
     # # 加载配置类之后在创建db
     # db = SQLAlchemy(app)
@@ -38,5 +36,7 @@ db = SQLAlchemy(app)
 
 
 # 注册蓝图
+from project.apps.home import home_buleprint
 app.register_blueprint(home_buleprint)  # home蓝图
+from project.apps.user import user_buleprint
 app.register_blueprint(user_buleprint)  # user蓝图

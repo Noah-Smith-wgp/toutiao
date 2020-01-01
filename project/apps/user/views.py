@@ -1,10 +1,15 @@
+import re
+from datetime import datetime
+from flask_restful import Api, Resource, reqparse
+
+from project import db
 from project.apps.user import user_buleprint
-from flask_restful import Api, Resource
+from project.models.user import User
+from project.utils.user import generate_token
 
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
-
 
 from flask import make_response, current_app
 from flask_restful.utils import PY3
@@ -46,12 +51,48 @@ class SmsCodeResource(Resource):
         return {'mobile': mobile}
 
 
-class LoginView(Resource):
+def check_mobile(value):
 
-    def get(self):
+    if not re.match(r'1[3-9]\d{9}', value):
+        raise ValueError('手机号不正确')
+    return value
 
-        return {'msg': 'OK kakakak'}
+
+class LoginResource(Resource):
+
+    def post(self):
+
+        parser = reqparse.RequestParser()
+
+        parser.add_argument('mobile', location='json', required=True, type=check_mobile)
+        parser.add_argument('code', location='json', required=True)
+
+        args = parser.parse_args()
+
+        mobile = args.get('mobile')
+        code = args.get('code')
+
+        try:
+            user = User.query.filter_by(mobile=mobile).first()
+        except Exception as e:
+            current_app.logger.error(e)
+
+        if user:
+            user.last_login = datetime.now()
+            db.session.commit()
+        else:
+            user = User()
+            user.mobile = mobile
+            user.name = mobile
+            user.last_login = datetime.now()
+
+            db.session.add(user)
+            db.session.commit()
+
+        token = generate_token(user.id)
+
+        return {'token': token}
 
 
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
-user_api.add_resource(LoginView, '/login')
+user_api.add_resource(LoginResource, '/authorizations')
