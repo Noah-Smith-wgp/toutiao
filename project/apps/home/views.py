@@ -3,6 +3,7 @@ from flask_restful import Api, Resource
 
 from project.apps.home import home_buleprint
 from project.models.news import Channel, Article
+from project.models.user import Relation
 
 home_api = Api(home_buleprint)
 
@@ -100,11 +101,22 @@ class DetailResource(Resource):
             current_app.logger.error(e)
             abort(404)
         else:
-            # Todo 完成是否关注
-            is_followed = True
+            # 完成是否关注
+            is_followed = False
+            if current_app.user_id:
+                try:
+
+                    user_id = current_app.user_id
+                    target_user_id = article.user.id
+                    relation = Relation.query.filter_by(user_id=user_id, target_user_id=target_user_id).first()
+                except Exception as e:
+                    current_app.logger.error(e)
+                else:
+                    is_followed = True
+
             # Todo 完成是否喜欢
             attitude = 1
-            #
+            # Todo 判断是否收藏
             is_collected = False
 
             data = {
