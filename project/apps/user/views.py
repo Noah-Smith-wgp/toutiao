@@ -64,7 +64,7 @@ class SmsCodeResource(Resource):
         current_app.redis_store.setex('send_flag_%s' % mobile, 60, 1)
 
         # 发送短信验证码
-        CCP().send_template_sms(mobile, [sms_code, 1], 1)
+        # CCP().send_template_sms(mobile, [sms_code, 1], 1)
 
         return {'mobile': mobile}
 
@@ -92,9 +92,9 @@ class LoginResource(Resource):
         current_app.logger.info(code)
 
         # 验证短信验证码
-        sms_code = current_app.redis_store.get('sms_%s' % mobile)
-        if code != sms_code:
-            return {'msg': '手机验证码错误'}
+        # sms_code = current_app.redis_store.get('sms_%s' % mobile)
+        # if code != sms_code:
+        #     return {'msg': '手机验证码错误'}
 
         try:
             user = User.query.filter_by(mobile=mobile).first()
