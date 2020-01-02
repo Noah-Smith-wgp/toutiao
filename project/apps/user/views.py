@@ -163,6 +163,30 @@ class UserChannelResource(Resource):
 
         return {'channels': channels}
 
+    def put(self):
+
+        user_id = g.user_id
+        channels = request.json.get('channels')
+
+        UserChannel.query.filter_by(user_id=user_id).update({'is_deleted': True})
+
+        for channel in channels:
+            flag = UserChannel.query.filter_by(user_id=user_id, channel_id=channel.get('id')).\
+                update({'sequence': channels.index(channel) + 1, 'is_deleted': False})
+            if flag:
+                db.session.commit()
+            else:
+                new_channel = UserChannel()
+                new_channel.user_id = user_id
+                new_channel.channel_id = channel.get('id')
+                new_channel.is_deleted = False
+                new_channel.sequence = channels.index(channel) + 1
+
+                db.session.add(new_channel)
+                db.session.commit()
+
+        return {'channels': channels}
+
 
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
