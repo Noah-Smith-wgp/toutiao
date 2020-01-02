@@ -2,7 +2,7 @@ from flask import session, request
 from flask_restful import Api, Resource
 
 from project.apps.home import home_buleprint
-from project.models.news import Channel
+from project.models.news import Channel, Article
 
 home_api = Api(home_buleprint)
 
@@ -59,8 +59,36 @@ class IndexView(Resource):
 
     def get(self):
 
-        return {'msg': 'index'}
+        channel_id = request.args.get('channel_id', 0)
+        page = request.args.get('page', 1)
+        per_page = request.args.get('per_page', 2)
+
+        try:
+            page = int(page)
+            per_page = int(per_page)
+        except Exception:
+            page = 1
+            per_page = 10
+
+        if channel_id == 0:
+            channel_id = 1
+
+        page_articles = Article.query.filter_by(channel_id=channel_id, status=Article.STATUS.APPROVED).\
+            paginate(page=page, per_page=per_page)
+
+        results = []
+        for item in page_articles.items:
+            results.append({
+                "art_id": item.id,
+                "title": item.title,
+                "aut_id": item.user.id,
+                "pubdate": item.ctime.strftime('%Y-%m-%d %H:%M:%S'),
+                "aut_name": item.user.name,
+                "comm_count": item.comment_count
+            })
+
+        return {'per_page': per_page, 'results': results}
 
 
 home_api.add_resource(ChannelsResource, '/channels')
-home_api.add_resource(IndexView, '/')
+home_api.add_resource(IndexView, '/articles')
