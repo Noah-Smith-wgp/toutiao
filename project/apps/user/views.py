@@ -1,9 +1,11 @@
+import random
 import re
 from datetime import datetime
 from flask_restful import Api, Resource, reqparse
 
 from project import db
 from project.apps.user import user_buleprint
+from project.libs.yuntongxun.ccp_sms import CCP
 from project.models.user import User
 from project.utils.user import generate_token, check_user_token, loginrequired
 
@@ -48,6 +50,22 @@ class SmsCodeResource(Resource):
 
     def get(self, mobile):
 
+        # 提取发送短信的标记 60秒避免频繁请求短信验证码
+        send_flag = current_app.redis_store.get('send_flag_%s' % mobile)
+        # 判断发送短信的标记是否存在（如果存在：频繁发送短信。反之，频率正常）
+        if send_flag:
+            return {'errmsg': '发送短信过于频繁'}
+
+        # 生成短信验证码：生成6位数验证码
+        sms_code = '%06d' % random.randint(0, 999999)
+        current_app.logger.info(sms_code)
+
+        current_app.redis_store.setex('sms_%s' % mobile, 60, sms_code)
+        current_app.redis_store.setex('send_flag_%s' % mobile, 60, 1)
+
+        # 发送短信验证码
+        CCP().send_template_sms(mobile, [sms_code, 1], 1)
+
         return {'mobile': mobile}
 
 
@@ -71,8 +89,12 @@ class LoginResource(Resource):
 
         mobile = args.get('mobile')
         code = args.get('code')
-
         current_app.logger.info(code)
+
+        # 验证短信验证码
+        sms_code = current_app.redis_store.get('sms_%s' % mobile)
+        if code != sms_code:
+            return {'msg': '手机验证码错误'}
 
         try:
             user = User.query.filter_by(mobile=mobile).first()

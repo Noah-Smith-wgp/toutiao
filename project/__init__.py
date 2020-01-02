@@ -23,6 +23,8 @@ def get_app(config=Config):
     # 创建一个redis实例
     redis_store = redis.Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
 
+    app.redis_store = redis_store
+
     Session(app)
 
     CORS(app)
