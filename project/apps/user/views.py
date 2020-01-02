@@ -6,6 +6,7 @@ from flask_restful import Api, Resource, reqparse
 from project import db
 from project.apps.user import user_buleprint
 from project.libs.yuntongxun.ccp_sms import CCP
+from project.models.news import UserChannel
 from project.models.user import User
 from project.utils.user import generate_token, check_user_token, loginrequired
 
@@ -140,6 +141,30 @@ class CenterResource(Resource):
             }
 
 
+class UserChannelResource(Resource):
+
+    method_decorators = [loginrequired]
+
+    def get(self):
+
+        user_id = g.user_id
+
+        try:
+            user_channels = UserChannel.query.filter_by(user_id=user_id).all()
+        except Exception as e:
+            current_app.logger.error(e)
+
+        channels = []
+        for item in user_channels:
+            channels.append({
+                'id': item.id,
+                'name': item.channel.name
+            })
+
+        return {'channels': channels}
+
+
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
 user_api.add_resource(CenterResource, '/user')
+user_api.add_resource(UserChannelResource, '/user/channels')
