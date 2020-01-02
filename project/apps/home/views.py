@@ -1,4 +1,4 @@
-from flask import session, request
+from flask import session, request, abort
 from flask_restful import Api, Resource
 
 from project.apps.home import home_buleprint
@@ -90,5 +90,39 @@ class IndexView(Resource):
         return {'per_page': per_page, 'results': results}
 
 
+class DetailResource(Resource):
+
+    def get(self, article_id):
+
+        try:
+            article = Article.query.get(article_id)
+        except Exception as e:
+            current_app.logger.error(e)
+            abort(404)
+        else:
+            # Todo 完成是否关注
+            is_followed = True
+            # Todo 完成是否喜欢
+            attitude = 1
+            #
+            is_collected = False
+
+            data = {
+                "art_id": article.id,
+                "title": article.title,
+                "pubdate": article.ctime.strftime('%Y-%m-%d %H:%M:%S'),
+                "aut_id": article.user.id,
+                "aut_name": article.user.name,
+                "aut_photo": article.user.profile_photo,
+                "content": article.content.content,
+                "is_followed": is_followed,
+                "attitude": attitude,  # 不喜欢0 喜欢1 无态度-1
+                "is_collected": is_collected
+            }
+
+            return data
+
+
 home_api.add_resource(ChannelsResource, '/channels')
 home_api.add_resource(IndexView, '/articles')
+home_api.add_resource(DetailResource, '/articles/<article_id>/')
