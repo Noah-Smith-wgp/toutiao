@@ -1,9 +1,10 @@
-from flask import session, request, abort
+from flask import session, request, abort, g
 from flask_restful import Api, Resource
 
 from project.apps.home import home_buleprint
 from project.models.news import Channel, Article
 from project.models.user import Relation
+
 
 home_api = Api(home_buleprint)
 
@@ -103,10 +104,10 @@ class DetailResource(Resource):
         else:
             # 完成是否关注
             is_followed = False
-            if current_app.user_id:
+            if g.user_id:
                 try:
 
-                    user_id = current_app.user_id
+                    user_id = g.user_id
                     target_user_id = article.user.id
                     relation = Relation.query.filter_by(user_id=user_id, target_user_id=target_user_id).first()
                 except Exception as e:
