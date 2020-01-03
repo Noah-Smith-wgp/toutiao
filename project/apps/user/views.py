@@ -7,14 +7,14 @@ from project import db
 from project.apps.user import user_buleprint
 from project.libs.yuntongxun.ccp_sms import CCP
 from project.models.news import UserChannel
-from project.models.user import User
+from project.models.user import User, Relation
 from project.utils.user import generate_token, check_user_token, loginrequired
 
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
 
-from flask import make_response, current_app, request, g
+from flask import make_response, current_app, request, g, abort
 from flask_restful.utils import PY3
 from json import dumps
 
@@ -188,7 +188,47 @@ class UserChannelResource(Resource):
         return {'channels': channels}
 
 
+class FollowResource(Resource):
+
+    method_decorators = [loginrequired]
+
+    def post(self):
+
+        user_id = g.user_id
+
+        parse = reqparse.RequestParser()
+        parse.add_argument('target', location='json', required=True)
+
+        args = parse.parse_args()
+
+        target = args.get('target')
+
+        user = None
+        try:
+            user = User.query.get(target)
+        except Exception as e:
+            current_app.logger.error(e)
+
+        if user is None:
+            abort(404)
+
+        relation = Relation()
+        relation.user_id = user_id
+        relation.target_user_id = target
+        relation.relation = Relation.RELATION.FOLLOW
+
+        try:
+            db.session.add(relation)
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(e)
+            return {'message': 'error', 'data': {}}
+
+        return {'target': target}
+
+
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
 user_api.add_resource(CenterResource, '/user')
 user_api.add_resource(UserChannelResource, '/user/channels')
+user_api.add_resource(FollowResource, '/user/followings')
