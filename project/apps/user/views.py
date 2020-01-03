@@ -227,8 +227,32 @@ class FollowResource(Resource):
         return {'target': target}
 
 
+class FollowDeleteResource(Resource):
+
+    method_decorators = [loginrequired]
+
+    def delete(self, target):
+
+        user_id = g.user_id
+
+        try:
+            relation = Relation.query.filter_by(user_id=user_id, target_user_id=target).first()
+        except Exception as e:
+            current_app.logger.error(e)
+            abort(404)
+
+        try:
+            db.session.delete(relation)
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(e)
+
+        return {'message': 'OK'}
+
+
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
 user_api.add_resource(CenterResource, '/user')
 user_api.add_resource(UserChannelResource, '/user/channels')
 user_api.add_resource(FollowResource, '/user/followings')
+user_api.add_resource(FollowDeleteResource, '/user/followings/<target>/')
