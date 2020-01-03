@@ -150,7 +150,7 @@ class UserChannelResource(Resource):
         user_id = g.user_id
 
         try:
-            user_channels = UserChannel.query.filter_by(user_id=user_id).all()
+            user_channels = UserChannel.query.filter_by(user_id=user_id, is_deleted=False).all()
         except Exception as e:
             current_app.logger.error(e)
 
@@ -170,9 +170,11 @@ class UserChannelResource(Resource):
 
         UserChannel.query.filter_by(user_id=user_id).update({'is_deleted': True})
 
+        db.session.commit()
+
         for channel in channels:
             flag = UserChannel.query.filter_by(user_id=user_id, channel_id=channel.get('id')).\
-                update({'sequence': channels.index(channel) + 1, 'is_deleted': False})
+                update({'sequence': channel.get('seq'), 'is_deleted': False})
             if flag:
                 db.session.commit()
             else:
@@ -180,7 +182,7 @@ class UserChannelResource(Resource):
                 new_channel.user_id = user_id
                 new_channel.channel_id = channel.get('id')
                 new_channel.is_deleted = False
-                new_channel.sequence = channels.index(channel) + 1
+                new_channel.sequence = channel.get('seq')
 
                 db.session.add(new_channel)
                 db.session.commit()
@@ -225,6 +227,48 @@ class FollowResource(Resource):
             return {'message': 'error', 'data': {}}
 
         return {'target': target}
+
+    def get(self):
+
+        page = request.args.get('page', 1)
+        per_page = request.args.get('per_page', 10)
+        user_id = g.user_id
+
+        try:
+            page = int(page)
+            per_page = int(per_page)
+        except Exception:
+            page = 1
+            per_page = 10
+
+        relations_page = Relation.query.filter_by(user_id=user_id, relation=Relation.RELATION.FOLLOW).paginate(page=page, per_page=per_page)
+
+        relation_list = []
+
+        for item in relations_page.items:
+            user = User.query.get(item.target_user_id)
+
+            # 相互关注判断
+            mutual_follow = False
+            for relation in user.followings:
+                if relation.target_user_id == user_id:
+                    mutual_follow = True
+                    break
+
+            relation_list.append({
+                "id": item.id,
+                "name": user.name,
+                "photo": user.profile_photo,
+                "fans_count": user.fans_count,
+                "mutual_follow": mutual_follow  # 是否为互相关注
+            })
+
+        return {
+            "total_count": relations_page.total,
+            "page": page,
+            "per_page": per_page,
+            "results": relation_list
+        }
 
 
 class FollowDeleteResource(Resource):

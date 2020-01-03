@@ -63,7 +63,7 @@ class IndexView(Resource):
 
         channel_id = request.args.get('channel_id', 0)
         page = request.args.get('page', 1)
-        per_page = request.args.get('per_page', 2)
+        per_page = request.args.get('per_page', 10)
 
         try:
             page = int(page)
