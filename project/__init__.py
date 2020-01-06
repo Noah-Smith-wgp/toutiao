@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
-from project.utils.user import check_user_token
+from project.utils.user import check_user_token, verify_jwt_token
 from settings import Config, DevelopmentConfig, ProductionConfig, setup_log
 
 
@@ -43,11 +43,12 @@ def before_request():
 
     g.user_id = None
     # 获取token
-    authorization = request.headers.get('authorization')
+    authorization = request.headers.get('Authorization')
     if authorization is not None and authorization.startswith('Bearer'):
         token = authorization[7:]
         # 验证token
-        user_id = check_user_token(token)
+        # user_id = check_user_token(token)
+        user_id = verify_jwt_token(token)
         g.user_id = user_id
 
 

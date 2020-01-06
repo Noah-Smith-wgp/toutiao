@@ -8,13 +8,12 @@ from project.apps.user import user_buleprint
 from project.libs.yuntongxun.ccp_sms import CCP
 from project.models.news import UserChannel
 from project.models.user import User, Relation
-from project.utils.user import generate_token, check_user_token, loginrequired
-
+from project.utils.user import generate_token, check_user_token, loginrequired, generate_jwt_token
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
 
-from flask import make_response, current_app, request, g, abort
+from flask import make_response, current_app, request, g, abort, jsonify
 from flask_restful.utils import PY3
 from json import dumps
 
@@ -114,9 +113,11 @@ class LoginResource(Resource):
             db.session.add(user)
             db.session.commit()
 
-        token = generate_token(user.id)
+        # token = generate_token(user.id)
+        token, refresh_token = generate_jwt_token(user.id)
 
-        return {'token': token}
+        # return {'token': token}
+        return jsonify({'token': token, 'refresh_token': refresh_token}), 201
 
 
 class CenterResource(Resource):
