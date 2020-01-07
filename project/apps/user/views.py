@@ -8,7 +8,7 @@ from project.apps.user import user_buleprint
 from project.libs.yuntongxun.ccp_sms import CCP
 from project.models.news import UserChannel
 from project.models.user import User, Relation
-from project.utils.user import generate_token, check_user_token, loginrequired, generate_jwt_token
+from project.utils.user import generate_token, check_user_token, loginrequired, generate_jwt_token, verify_jwt_token
 
 # 使用api接管蓝图
 user_api = Api(user_buleprint)
@@ -117,7 +117,7 @@ class LoginResource(Resource):
         token, refresh_token = generate_jwt_token(user.id)
 
         # return {'token': token}
-        return jsonify({'token': token, 'refresh_token': refresh_token}), 201
+        return {'token': token, 'refresh_token': refresh_token}, 201
 
 
 class CenterResource(Resource):
@@ -295,9 +295,26 @@ class FollowDeleteResource(Resource):
         return {'message': 'OK'}
 
 
+class RefreshTokenResource(Resource):
+
+    def put(self):
+
+        authorization = request.headers.get('Authorization')
+        if authorization and authorization.startswith('Bearer'):
+            refresh_token = authorization[7:]
+            flag, payload = verify_jwt_token(refresh_token)
+            if flag and payload.get('refresh'):
+                user_id = payload.get('user_id')
+                token, refresh_token = generate_jwt_token(user_id)
+                return {'token': token, 'refresh_token': refresh_token}, 201
+            else:
+                return {'message': 'Wrong refresh token.'}, 403
+
+
 user_api.add_resource(SmsCodeResource, '/sms/codes/<mobile>/')
 user_api.add_resource(LoginResource, '/authorizations')
 user_api.add_resource(CenterResource, '/user')
 user_api.add_resource(UserChannelResource, '/user/channels')
 user_api.add_resource(FollowResource, '/user/followings')
 user_api.add_resource(FollowDeleteResource, '/user/followings/<target>/')
+user_api.add_resource(RefreshTokenResource, '/refreshtoken')

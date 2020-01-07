@@ -48,8 +48,12 @@ def before_request():
         token = authorization[7:]
         # 验证token
         # user_id = check_user_token(token)
-        user_id = verify_jwt_token(token)
-        g.user_id = user_id
+        flag, payload = verify_jwt_token(token)
+        if flag and payload.get('refresh'):
+            g.user_id = None
+        elif payload:
+            g.user_id = payload.get('user_id')
+
 
 
 # 注册蓝图

@@ -33,8 +33,8 @@ def check_user_token(token):
 # 使用jwt生成token
 def generate_jwt_token(user_id):
 
-    token = jwt.encode(payload={'user_id': user_id, 'exp': datetime.utcnow() + timedelta(hours=2)}, key=Config.SECRET_KEY)
-    refresh_token = jwt.encode(payload={'user_id': user_id, 'exp': datetime.utcnow() + timedelta(days=14)}, key=Config.SECRET_KEY)
+    token = jwt.encode(payload={'user_id': user_id, 'exp': datetime.utcnow() + timedelta(hours=2)}, key=Config.SECRET_KEY, algorithm='HS256')
+    refresh_token = jwt.encode(payload={'user_id': user_id, 'refresh': True, 'exp': datetime.utcnow() + timedelta(days=14)}, key=Config.SECRET_KEY, algorithm='HS256')
 
     return token.decode(), refresh_token.decode()
 
@@ -43,12 +43,11 @@ def generate_jwt_token(user_id):
 def verify_jwt_token(token):
 
     try:
-        data = jwt.decode(token, key=Config.SECRET_KEY)
-    except Exception:
-        return jsonify({'msg': 'token error'}, 401)
+        payload = jwt.decode(token, key=Config.SECRET_KEY, algorithms=['HS256'])
+    except jwt.PyJWTError:
+        return False, None
     else:
-        user_id = data.get('user_id')
-        return user_id
+        return True, payload
 
 
 # 登录验证装饰器
